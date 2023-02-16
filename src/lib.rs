@@ -44,7 +44,7 @@ pub fn shank_steps<
 
     let mut runner = element.clone();
     steps_baby.push(runner);
-    for i in 1..=l {
+    for _ in 1..=l {
         runner = operation(runner, element.clone());
         steps_baby.push(runner);
     }
@@ -52,7 +52,7 @@ pub fn shank_steps<
     let multiplicator = power(inverse_fn(element), l);
     let mut runner = value_pow;
     steps_giant.push(runner);
-    for i in 1..=l {
+    for _ in 1..=l {
         runner = operation(runner, multiplicator.clone());
         steps_giant.push(runner);
     }
@@ -96,7 +96,7 @@ mod tests {
     #[test]
     fn collision() {
         // 9704^x ≡ 13896 (mod 17389) // testing vector is taken from the book
-        const modulo: usize = 17389;
+        const MODULO: usize = 17389;
 
         use num::bigint::*;
         use num_modular::ModularCoreOps;
@@ -112,7 +112,7 @@ mod tests {
         // }
         fn binded_inv(left: usize) -> usize {
             println!("DEBUG! {}", left as u64);
-            let r = bubblemath::number_theory::mod_inv(left as u64, modulo as u64);
+            let r = bubblemath::number_theory::mod_inv(left as u64, MODULO as u64);
             println!("DEBUG! {}", r);
             r as usize
         }
@@ -127,7 +127,7 @@ mod tests {
 
         // Asserting on using result as exponent looks more general than comparing the resulting value of "logarithm".
         let value_assert = modpow::modpow(
-            &9704.to_bigint().unwrap(), &x.to_bigint().unwrap(), &modulo.to_bigint().unwrap()
+            &9704.to_bigint().unwrap(), &x.to_bigint().unwrap(), &MODULO.to_bigint().unwrap()
         );
         assert_eq!(
             value_assert, 
