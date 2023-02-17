@@ -1,7 +1,7 @@
 /// An exercise implementation of Shanks Baby-step giant-step for arbitrary groups. No optimizations were kept in mind for it. The idea is to create a function which would work with any group, so
 /// it needs to be provided needed information about the group itself (`operation` and inverse) and the `order` of the element that was exponentiated.
 
-use integer_sqrt::IntegerSquareRoot;
+use num::integer::Roots;
 
 // `usize` is an arbitrary choice, also see https://users.rust-lang.org/t/integer-square-root/96/6
 /// Takes 
@@ -23,7 +23,7 @@ pub fn shank_steps<
     inverse_fn: fn(GroupEl) -> GroupEl
 ) -> usize
 {
-    let l = order.integer_sqrt() + 1;
+    let l = order.sqrt() as usize + 1;
     
     // maybe it would be better to borrow instead of cloning
     let power = |base: GroupEl, exp: usize| -> GroupEl {

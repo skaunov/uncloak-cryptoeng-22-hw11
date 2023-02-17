@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 # group = "*"
-integer-sqrt = "*"
 num-modular = "*"
 modinverse = "*"
 bubblemath = "*"
