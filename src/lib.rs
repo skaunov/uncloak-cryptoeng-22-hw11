@@ -24,14 +24,17 @@ pub fn shank_steps<
 ) -> usize
 {
     let l = order.sqrt() as usize + 1;
+    let identity = operation(element.clone(), inverse_fn(element.clone()));
     
     // maybe it would be better to borrow instead of cloning
     let power = |base: GroupEl, exp: usize| -> GroupEl {
-        let mut counter = exp;
-        let mut result = base.clone();
-        while counter > 1 {
-            counter -= 1;
-            result = operation(result, base.clone());
+        let mut result = identity;
+        let mut exp = exp;
+        let mut base = base;
+        while exp > 0 {
+            if exp % 2 == 1 {result = operation(result, base.clone());}             
+            exp >>= 1;
+            base = operation(base, base);
         }
         result
     };
@@ -40,7 +43,7 @@ pub fn shank_steps<
     let mut steps_giant = Vec::new();
 
     // here's a small catch-up: Shanks baby-step list starts with identity element
-    steps_baby.push(operation(element.clone(), inverse_fn(element.clone())));
+    steps_baby.push(identity);
 
     let mut runner = element.clone();
     steps_baby.push(runner);
