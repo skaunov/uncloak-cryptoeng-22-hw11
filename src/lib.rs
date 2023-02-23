@@ -13,7 +13,6 @@ use num::integer::Roots;
 pub fn shank_steps<
     GroupEl: 
         std::clone::Clone
-        + std::marker::Copy
         + std::cmp::PartialEq
 >(
     element: GroupEl, 
@@ -28,13 +27,13 @@ pub fn shank_steps<
     
     // maybe it would be better to borrow instead of cloning
     let power = |base: GroupEl, exp: usize| -> GroupEl {
-        let mut result = identity;
+        let mut result = identity.clone();
         let mut exp = exp;
         let mut base = base;
         while exp > 0 {
             if exp % 2 == 1 {result = operation(result, base.clone());}             
             exp >>= 1;
-            base = operation(base, base);
+            base = operation(base.clone(), base);
         }
         result
     };
@@ -43,21 +42,21 @@ pub fn shank_steps<
     let mut steps_giant = Vec::new();
 
     // here's a small catch-up: Shanks baby-step list starts with identity element
-    steps_baby.push(identity);
+    steps_baby.push(identity.clone());
 
     let mut runner = element.clone();
-    steps_baby.push(runner);
+    steps_baby.push(runner.clone());
     for _ in 1..=l {
-        runner = operation(runner, element.clone());
-        steps_baby.push(runner);
+        runner = operation(runner.clone(), element.clone());
+        steps_baby.push(runner.clone());
     }
 
     let multiplicator = power(inverse_fn(element), l);
     let mut runner = value_pow;
-    steps_giant.push(runner);
+    steps_giant.push(runner.clone());
     for _ in 1..=l {
-        runner = operation(runner, multiplicator.clone());
-        steps_giant.push(runner);
+        runner = operation(runner.clone(), multiplicator.clone());
+        steps_giant.push(runner.clone());
     }
 
     let mut i = usize::default();
