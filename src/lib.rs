@@ -15,15 +15,15 @@ pub fn shank_steps<
         std::clone::Clone
         + std::cmp::PartialEq
 >(
-    element: GroupEl, 
+    element: &GroupEl, 
     order: usize, 
     value_pow: GroupEl, 
-    operation: fn(GroupEl, GroupEl) -> GroupEl,
-    inverse_fn: fn(GroupEl) -> GroupEl
+    operation: impl Fn(&GroupEl, &GroupEl) -> GroupEl,
+    inverse_fn: impl Fn(&GroupEl) -> GroupEl
 ) -> usize
 {
-    let l = order.sqrt() as usize + 1;
-    let identity = operation(element.clone(), inverse_fn(element.clone()));
+    let l = order.sqrt() + 1;
+    let identity = operation(element, &inverse_fn(element));
     
     // maybe it would be better to borrow instead of cloning
     let power = |base: GroupEl, exp: usize| -> GroupEl {
@@ -31,9 +31,9 @@ pub fn shank_steps<
         let mut exp = exp;
         let mut base = base;
         while exp > 0 {
-            if exp % 2 == 1 {result = operation(result, base.clone());}             
+            if exp % 2 == 1 {result = operation(&result, &base);}             
             exp >>= 1;
-            base = operation(base.clone(), base);
+            base = operation(&base, &base);
         }
         result
     };
@@ -47,15 +47,18 @@ pub fn shank_steps<
     let mut runner = element.clone();
     steps_baby.push(runner.clone());
     for _ in 1..=l {
-        runner = operation(runner.clone(), element.clone());
+        runner = operation(&runner, element);
         steps_baby.push(runner.clone());
     }
 
     let multiplicator = power(inverse_fn(element), l);
+        /* to be fair it should be noted that giant-step list starts with identity 
+        element too, though applying it for the first giant step yeilds just 
+        the value of power in question itself by definition of identity element */
     let mut runner = value_pow;
     steps_giant.push(runner.clone());
     for _ in 1..=l {
-        runner = operation(runner.clone(), multiplicator.clone());
+        runner = operation(&runner, &multiplicator);
         steps_giant.push(runner.clone());
     }
 
@@ -102,8 +105,8 @@ mod tests {
 
         use num::bigint::*;
         use num_modular::ModularCoreOps;
-        fn binded_operation(f: usize, s: usize) -> usize {
-            f.mulm(&s, &17389usize)
+        fn binded_operation(f: &usize, s: &usize) -> usize {
+            f.mulm(s, &17389usize)
         }
         
             // During debugging different versions of mod. inv. were tried.
@@ -112,15 +115,15 @@ mod tests {
         //     modinverse::modinverse(left, modulo)
         //         .unwrap()
         // }
-        fn binded_inv(left: usize) -> usize {
-            println!("DEBUG! {}", left as u64);
-            let r = bubblemath::number_theory::mod_inv(left as u64, MODULO as u64);
-            println!("DEBUG! {}", r);
+        fn binded_inv(left: &usize) -> usize {
+            println!("DEBUG! {}", *left as u64);
+            let r = bubblemath::number_theory::mod_inv(*left as u64, MODULO as u64);
+            println!("DEBUG! {r}");
             r as usize
         }
         
         let x = shank_steps(
-            9704usize, 
+            &9704usize, 
             1242, 
             13896usize, 
             binded_operation, 
