@@ -1,5 +1,5 @@
-/// An exercise implementation of Shanks Baby-step giant-step for arbitrary groups. No optimizations were kept in mind for it. The idea is to create a function which would work with any group, so
-/// it needs to be provided needed information about the group itself (`operation` and inverse) and the `order` of the element that was exponentiated.
+/// An exercise implementation of Shanks Baby-step giant-step for arbitrary groups. No optimizations were kept in mind for it. The idea is to create a function which would 
+/// work with any group, so it needs to be provided needed information about the group itself (`operation` and inverse) and the `order` of the element that was exponentiated.
 
 use num::integer::Roots;
 
@@ -20,12 +20,11 @@ pub fn shank_steps<
     value_pow: GroupEl, 
     operation: impl Fn(&GroupEl, &GroupEl) -> GroupEl,
     inverse_fn: impl Fn(&GroupEl) -> GroupEl
-) -> usize
+) -> Result<usize, &'static str>
 {
     let l = order.sqrt() + 1;
     let identity = operation(element, &inverse_fn(element));
     
-    // maybe it would be better to borrow instead of cloning
     let power = |base: GroupEl, exp: usize| -> GroupEl {
         let mut result = identity.clone();
         let mut exp = exp;
@@ -44,39 +43,35 @@ pub fn shank_steps<
     // here's a small catch-up: Shanks baby-step list starts with identity element
     steps_baby.push(identity.clone());
 
+    let msg_err = "`element` isn't a generator, or `order` is wrong";
+
     let mut runner = element.clone();
     steps_baby.push(runner.clone());
     for _ in 1..=l {
         runner = operation(&runner, element);
+        if &runner == element {return Err(msg_err);}
         steps_baby.push(runner.clone());
     }
 
     let multiplicator = power(inverse_fn(element), l);
-        /* to be fair it should be noted that giant-step list starts with identity 
-        element too, though applying it for the first giant step yeilds just 
+        /* to be fair it should be noted that giant-step list starts with identity element too, though applying it for the first giant step yeilds just 
         the value of power in question itself by definition of identity element */
     let mut runner = value_pow;
     steps_giant.push(runner.clone());
     for _ in 1..=l {
         runner = operation(&runner, &multiplicator);
+        if &runner == element {return Err(msg_err);}
         steps_giant.push(runner.clone());
     }
 
-    let mut i = usize::default();
-    let mut j = usize::default();
-
-    // TODO check that answer is actually single
-    steps_baby.iter().enumerate()
-        .for_each(|(pos_baby, el_baby)| {steps_giant.iter().enumerate().for_each(
-            |(pos_giant, el_giant)| {
-                if el_baby == el_giant {
-                    i = pos_baby;
-                    j = pos_giant;
-                }
+    for (pos_baby, el_baby) in steps_baby.iter().enumerate() {
+        for (pos_giant, el_giant) in steps_giant.iter().enumerate() {
+            if el_baby == el_giant {
+            return Ok(pos_baby + pos_giant * l)
             }
-    )});
-    i + j * l
-
+        }
+    }
+    Err("Something went wrong: check that `element` is a generator, and that `order` is correct.")
 }
 
 #[cfg(test)]
@@ -96,8 +91,8 @@ mod tests {
         assert_eq!(bubblemath::number_theory::mod_inv(9704, 17389), 14943);
     }
     
-    /* The idea was just to drop-in everything suitable from <Crates.io> to see that higher-order function could deal with it. It's quite simplistic with the integer group, could worth to try
-    with EC group, or other. */
+    /* The idea was just to drop-in everything suitable from <Crates.io> to see that higher-order function could deal with it. 
+    It's quite simplistic with the integer group, could worth to try with EC group, or other. */
     #[test]
     fn collision() {
         // 9704^x ≡ 13896 (mod 17389) // testing vector is taken from the book
@@ -132,7 +127,7 @@ mod tests {
 
         // Asserting on using result as exponent looks more general than comparing the resulting value of "logarithm".
         let value_assert = modpow::modpow(
-            &9704.to_bigint().unwrap(), &x.to_bigint().unwrap(), &MODULO.to_bigint().unwrap()
+            &9704.to_bigint().unwrap(), &x.unwrap().to_bigint().unwrap(), &MODULO.to_bigint().unwrap()
         );
         assert_eq!(
             value_assert, 
